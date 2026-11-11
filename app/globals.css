@@ -1,26 +1,153 @@
 @import "tailwindcss";
 
-:root {
-    --background: #ffffff;
-    --foreground: #171717;
+/* Fonts are self-hosted from /public/fonts (no build-time or runtime call to
+   Google). Each family is split into a Bengali file and a Latin file by
+   unicode-range, so English words inside Bangla copy use the matching Latin
+   cut instead of a system fallback. */
+@font-face {
+    font-family: "Noto Serif Bengali";
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/noto-serif-bengali-bengali-600-normal.woff2") format("woff2");
+    unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+200C-200D, U+20B9, U+25CC;
+}
+@font-face {
+    font-family: "Noto Serif Bengali";
+    font-weight: 600;
+    font-display: swap;
+    src: url("/fonts/noto-serif-bengali-latin-600-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122;
+}
+@font-face {
+    font-family: "Noto Serif Bengali";
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/noto-serif-bengali-bengali-700-normal.woff2") format("woff2");
+    unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+200C-200D, U+20B9, U+25CC;
+}
+@font-face {
+    font-family: "Noto Serif Bengali";
+    font-weight: 700;
+    font-display: swap;
+    src: url("/fonts/noto-serif-bengali-latin-700-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122;
+}
+@font-face {
+    font-family: "Anek Bangla";
+    font-weight: 100 800;
+    font-display: swap;
+    src: url("/fonts/anek-bangla-bengali-wght-normal.woff2") format("woff2-variations");
+    unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+200C-200D, U+20B9, U+25CC;
+}
+@font-face {
+    font-family: "Anek Bangla";
+    font-weight: 100 800;
+    font-display: swap;
+    src: url("/fonts/anek-bangla-latin-wght-normal.woff2") format("woff2-variations");
+    unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122;
+}
+@font-face {
+    font-family: "Galada";
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/galada-bengali-400-normal.woff2") format("woff2");
+    unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+200C-200D, U+20B9, U+25CC;
+}
+@font-face {
+    font-family: "Galada";
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/galada-latin-400-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122;
 }
 
-@theme inline {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
-}
+/* Design tokens. Greens are sampled from the Genetic Ayur logo, gold and
+   black from the Kasturi jar, so the page sits between the two assets. */
+@theme {
+    --font-display: "Noto Serif Bengali", Georgia, serif;
+    --font-body: "Anek Bangla", system-ui, sans-serif;
+    --font-hand: "Galada", "Noto Serif Bengali", cursive;
+    /* Dashboard: system UI font, with Anek Bangla for Bangla content. */
+    --font-sans: ui-sans-serif, system-ui, "Segoe UI", "Anek Bangla", sans-serif;
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
+    --color-bon: #0a4d14; /* logo wordmark green */
+    --color-bon-deep: #06300c; /* stage behind the jar */
+    --color-pata: #2f8a1c; /* leaf green */
+    --color-kochi: #bfdd6a; /* young leaf, used on dark */
+    --color-sona: #d9a93a; /* jar gold */
+    --color-sona-light: #f4dc8c;
+    --color-kosh: #0d0d0b; /* jar black */
+    --color-kagoj: #f1f3e4; /* sage paper */
+    --color-kagoj-deep: #e3e8cf;
+    --color-dalchini: #9a4a12; /* cinnamon, handwritten accents */
+    --color-kali: #17261a; /* ink */
+    --color-kali-soft: #4a5a4c;
+
+    --radius-arch: 999px 999px 1.25rem 1.25rem;
+
+    --animate-rise: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    --animate-scribble: scribble 0.6s ease-out both;
+
+    @keyframes rise {
+        from {
+            opacity: 0;
+            transform: translateY(28px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    @keyframes scribble {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
     }
 }
 
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+}
+
 body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--font-body);
+    color: var(--color-kali);
+    background: var(--color-kagoj);
+    /* Bangla conjuncts and matras need more vertical room than Latin. */
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-pata);
+    outline-offset: 3px;
+}
+
+/* Fine paper grain. An inline SVG turbulence filter, so no image request. */
+.paper-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .09 0 0 0 0 .15 0 0 0 0 .1 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Ruled lines for the dosage slip, spaced to the slip's line-height. */
+.ruled {
+    background-image: linear-gradient(to bottom, transparent calc(100% - 1px), rgb(10 77 20 / 0.16) 0);
+    background-size: 100% 2.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }

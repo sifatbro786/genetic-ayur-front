@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { Button, Card, PageHeader, StatusBadge, inputClass } from "@/components/admin/ui";
-import { takaEn, telHref, variantLabel } from "@/lib/format";
+import { itemLabel, takaEn, telHref } from "@/lib/format";
 import { ORDER_STATUSES, addSampleOrders, deleteOrder, updateOrderStatus } from "@/lib/orders";
 import { ordersStore, useOrders, useProduct, useSite } from "@/lib/stores";
 
@@ -108,7 +108,7 @@ export default function OrdersPage() {
                                                         {order.shippingAddress.phone}
                                                     </a>
                                                 </td>
-                                                <td className="px-4 py-3">{variantLabel(order.orderItems[0].variant)}</td>
+                                                <td className="px-4 py-3">{itemLabel(order.orderItems[0])}</td>
                                                 <td className="px-4 py-3 text-right tabular-nums">{takaEn(order.totalPrice)}</td>
                                                 <td className="px-4 py-3">
                                                     <select

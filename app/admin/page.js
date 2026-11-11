@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Card, PageHeader, StatusBadge } from "@/components/admin/ui";
-import { takaEn, variantLabel } from "@/lib/format";
+import { itemLabel, takaEn } from "@/lib/format";
 import { useOrders, useProduct } from "@/lib/stores";
 
 export default function OverviewPage() {
@@ -45,7 +45,7 @@ export default function OverviewPage() {
                             <li key={order.orderNumber} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
                                 <span className="font-medium tabular-nums">{order.orderNumber}</span>
                                 <span className="text-gray-600">{order.shippingAddress.name}</span>
-                                <span className="text-gray-600">{variantLabel(order.orderItems[0].variant)}</span>
+                                <span className="text-gray-600">{itemLabel(order.orderItems[0])}</span>
                                 <span className="tabular-nums">{takaEn(order.totalPrice)}</span>
                                 <StatusBadge status={order.orderStatus} />
                             </li>

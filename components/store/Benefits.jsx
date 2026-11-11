@@ -8,7 +8,7 @@ export default function Benefits({ data }) {
                 <h2 className="font-display text-4xl font-bold leading-[1.35] text-bon sm:text-5xl sm:leading-[1.3]">
                     {data.title}
                 </h2>
-                <p className="mt-5 max-w-md text-lg text-kali-soft">{data.text}</p>
+                <p className="mt-5 max-w-md whitespace-pre-line text-lg text-kali-soft">{data.text}</p>
                 <div className="relative mt-10 w-64 max-w-full">
                     <Photo src={data.image} alt="" className="aspect-[4/5] rounded-arch" />
                     {data.handNote ? (

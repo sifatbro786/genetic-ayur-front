@@ -19,7 +19,7 @@ export default function Hero({ data, product, site }) {
                     {data.kicker ? (
                         <p className="inline-block -rotate-1 font-hand text-xl text-dalchini sm:text-2xl">{data.kicker}</p>
                     ) : null}
-                    <h1 className="mt-3 max-w-[13ch] font-display text-[2.6rem] font-bold leading-[1.28] text-bon sm:text-6xl sm:leading-[1.25] lg:text-[4.25rem]">
+                    <h1 className="mt-3 max-w-[20ch] whitespace-pre-line text-balance font-display text-[2.15rem] font-bold leading-[1.32] text-bon sm:text-5xl sm:leading-[1.3] lg:text-[3.25rem]">
                         {data.title}
                     </h1>
                     <p className="mt-6 max-w-[34rem] text-lg text-kali-soft">{data.text}</p>

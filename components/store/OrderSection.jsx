@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CircleCheck, MessageCircle } from "lucide-react";
-import { normalizePhone, taka, variantLabel, whatsappHref } from "@/lib/format";
+import { CircleCheck, MessageCircle, Minus, Plus } from "lucide-react";
+import { itemLabel, normalizePhone, taka, toBn, variantLabel, whatsappHref } from "@/lib/format";
 import { placeOrder } from "@/lib/orders";
 import { calculateOrder } from "@/lib/pricing";
 
 const EMPTY = { name: "", phone: "", address: "", note: "" };
+// COD orders above this are usually resellers; they should call instead.
+const MAX_QTY = 10;
 
 function validate(form) {
     const errors = {};
@@ -27,6 +29,7 @@ export default function OrderSection({ data, product, site }) {
     // dashboard marks as popular, so a dashboard change shows up immediately.
     const [pickedVariant, setPickedVariant] = useState(null);
     const [pickedZone, setPickedZone] = useState(null);
+    const [quantity, setQuantity] = useState(1);
     const [form, setForm] = useState(EMPTY);
     const [errors, setErrors] = useState({});
     const [submitError, setSubmitError] = useState("");
@@ -34,8 +37,11 @@ export default function OrderSection({ data, product, site }) {
 
     const variantIndex = Math.min(pickedVariant ?? Math.max(popular, 0), product.variants.length - 1);
     const zoneKey = zones.some((z) => z.key === pickedZone) ? pickedZone : zones[0]?.key;
-    const totals = calculateOrder({ product, variantIndex, zoneKey, site });
     const soldOut = !product.isActive || product.stock <= 0;
+    const maxQty = Math.max(1, Math.min(MAX_QTY, product.stock || 1));
+    const qty = Math.min(quantity, maxQty);
+    const totals = calculateOrder({ product, variantIndex, quantity: qty, zoneKey, site });
+    const singlePack = product.variants.length === 1;
 
     const setField = (key) => (e) => {
         setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -71,6 +77,7 @@ export default function OrderSection({ data, product, site }) {
         }
         setPlaced(order);
         setForm(EMPTY);
+        setQuantity(1);
     };
 
     return (
@@ -90,27 +97,37 @@ export default function OrderSection({ data, product, site }) {
                         <form onSubmit={onSubmit} noValidate className="mt-12 grid gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
                             <div>
                                 <fieldset>
-                                    <legend className="font-display text-2xl font-semibold text-sona-light">প্যাক বেছে নিন</legend>
+                                    <legend className="font-display text-2xl font-semibold text-sona-light">
+                                        {singlePack ? "আপনার পণ্য" : "প্যাক বেছে নিন"}
+                                    </legend>
                                     <div className="mt-4 space-y-3">
                                         {product.variants.map((variant, i) => {
                                             const active = i === variantIndex;
                                             return (
                                                 <label
                                                     key={i}
-                                                    className={`relative flex cursor-pointer items-center gap-4 rounded-xl border-2 bg-kagoj px-4 py-4 transition-colors ${
-                                                        active ? "border-sona" : "border-transparent hover:border-sona/50"
+                                                    className={`relative flex items-center gap-4 rounded-xl border-2 bg-kagoj px-4 py-4 transition-colors ${
+                                                        singlePack
+                                                            ? "border-transparent"
+                                                            : active
+                                                              ? "cursor-pointer border-sona"
+                                                              : "cursor-pointer border-transparent hover:border-sona/50"
                                                     }`}
                                                 >
-                                                    <input
-                                                        type="radio"
-                                                        name="pack"
-                                                        checked={active}
-                                                        onChange={() => setPickedVariant(i)}
-                                                        className="h-5 w-5 accent-bon"
-                                                    />
+                                                    {singlePack ? (
+                                                        <img src={product.image} alt="" className="h-14 w-auto" />
+                                                    ) : (
+                                                        <input
+                                                            type="radio"
+                                                            name="pack"
+                                                            checked={active}
+                                                            onChange={() => setPickedVariant(i)}
+                                                            className="h-5 w-5 accent-bon"
+                                                        />
+                                                    )}
                                                     <span className="flex-1 leading-snug">
                                                         <span className="block text-xl font-semibold text-kali">
-                                                            {variantLabel(variant)}
+                                                            {singlePack ? product.nameBn : variantLabel(variant)}
                                                         </span>
                                                         {variant.note ? (
                                                             <span className="text-[15px] text-kali-soft">{variant.note}</span>
@@ -136,6 +153,39 @@ export default function OrderSection({ data, product, site }) {
                                         })}
                                     </div>
                                 </fieldset>
+
+                                <div className="mt-6 flex items-center justify-between gap-4">
+                                    <span id="qty-label" className="text-lg font-medium text-kagoj">
+                                        পরিমাণ (কৌটা)
+                                    </span>
+                                    <div
+                                        role="group"
+                                        aria-labelledby="qty-label"
+                                        className="flex items-center rounded-full border-2 border-kagoj/30"
+                                    >
+                                        <button
+                                            type="button"
+                                            aria-label="এক কৌটা কমান"
+                                            disabled={qty <= 1}
+                                            onClick={() => setQuantity(qty - 1)}
+                                            className="flex h-11 w-11 items-center justify-center rounded-full text-kagoj hover:bg-kagoj/10 disabled:opacity-35"
+                                        >
+                                            <Minus aria-hidden className="h-5 w-5" />
+                                        </button>
+                                        <output aria-live="polite" className="w-10 text-center font-display text-2xl font-bold text-sona-light">
+                                            {toBn(qty)}
+                                        </output>
+                                        <button
+                                            type="button"
+                                            aria-label="এক কৌটা বাড়ান"
+                                            disabled={qty >= maxQty}
+                                            onClick={() => setQuantity(qty + 1)}
+                                            className="flex h-11 w-11 items-center justify-center rounded-full text-kagoj hover:bg-kagoj/10 disabled:opacity-35"
+                                        >
+                                            <Plus aria-hidden className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                </div>
 
                                 <fieldset className="mt-9">
                                     <legend className="font-display text-2xl font-semibold text-sona-light">ডেলিভারি এলাকা</legend>
@@ -167,7 +217,9 @@ export default function OrderSection({ data, product, site }) {
 
                                 <dl className="mt-9 space-y-2 border-t-2 border-sona/60 pt-5 text-[17px] text-kagoj">
                                     <div className="flex justify-between">
-                                        <dt className="text-kagoj/70">পণ্যের মূল্য</dt>
+                                        <dt className="text-kagoj/70">
+                                            পণ্যের মূল্য{qty > 1 ? ` (${taka(totals.variant.price)} × ${toBn(qty)})` : ""}
+                                        </dt>
                                         <dd className="font-medium">{taka(totals.itemsPrice)}</dd>
                                     </div>
                                     <div className="flex justify-between">
@@ -288,7 +340,7 @@ function OrderPlaced({ order, data, site, onAgain }) {
     // themselves; nothing is sent automatically.
     const message = [
         `অর্ডার নম্বর: ${order.orderNumber}`,
-        `পণ্য: ${item.name} (${variantLabel(item.variant)})`,
+        `পণ্য: ${item.name} (${toBn(itemLabel(item))})`,
         `নাম: ${order.shippingAddress.name}`,
         `মোবাইল: ${order.shippingAddress.phone}`,
         `ঠিকানা: ${order.shippingAddress.addressLine1}`,
@@ -308,7 +360,7 @@ function OrderPlaced({ order, data, site, onAgain }) {
                 <div className="flex justify-between gap-4">
                     <dt className="text-kali-soft">পণ্য</dt>
                     <dd className="text-right font-medium">
-                        {item.name}, {variantLabel(item.variant)}
+                        {item.name}, {toBn(itemLabel(item))}
                     </dd>
                 </div>
                 <div className="flex justify-between gap-4">

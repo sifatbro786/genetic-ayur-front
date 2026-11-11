@@ -18,7 +18,7 @@ export default function Usage({ data }) {
 
                 {/* A kobiraj's handwritten slip. The steps are a real
                     sequence, so they are numbered. */}
-                <div className="mx-auto w-full max-w-md rotate-[-1.5deg] bg-[#fbfbf3] px-7 pb-8 pt-7 shadow-[0_1px_0_rgb(0_0_0/0.06),0_24px_40px_-22px_rgb(23_38_26/0.55)] sm:px-9">
+                <div className="mx-auto w-full max-w-lg rotate-[-1.5deg] bg-[#fbfbf3] px-7 pb-8 pt-7 shadow-[0_1px_0_rgb(0_0_0/0.06),0_24px_40px_-22px_rgb(23_38_26/0.55)] sm:px-9">
                     <div className="flex items-baseline justify-between border-b-2 border-bon pb-3">
                         <p className="font-display text-2xl font-bold text-bon">{data.slipTitle}</p>
                         <p className="font-display text-3xl font-bold text-bon/70" aria-hidden>

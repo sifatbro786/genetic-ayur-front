@@ -25,6 +25,12 @@ export default function SettingsPage() {
                     {editor(siteSchemas.shipping)}
                 </Card>
                 <Card title="Footer">{editor(siteSchemas.footer)}</Card>
+                <Card title="Privacy policy page" description="Shown at /privacy.">
+                    {editor(siteSchemas.privacy)}
+                </Card>
+                <Card title="Terms page" description="Shown at /terms.">
+                    {editor(siteSchemas.terms)}
+                </Card>
                 <Card title="Demo data" description="Removes every change saved in this browser: content, product, settings and orders.">
                     {confirmReset ? (
                         <Button

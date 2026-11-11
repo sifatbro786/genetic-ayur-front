@@ -35,6 +35,10 @@ not access control.
 | `components/admin/` | Dashboard shell and the schema-driven form editor |
 | `app/admin/` | Dashboard pages |
 | `app/globals.css` | Fonts and design tokens (`@theme`) |
+| `components/store/IntroLoader.jsx` | First-visit loader on `/` (3 s minimum, once per browser session) |
+| `components/store/LegalPage.jsx` | `/privacy` and `/terms`; text is edited in Dashboard > Settings |
+| `components/store/StatusPage.jsx` | Shared shell for `app/not-found.js` and `app/error.js` |
+| `app/global-error.js` | Fallback when the root layout itself fails |
 
 ### Adding an editable field
 
@@ -57,6 +61,9 @@ so old browser copies are ignored.
 - Move images to uploads/CDN and switch `<img>` to `next/image`.
 
 ## Before going live
+
+The privacy policy and terms are a starting draft written for this shop, not
+legal advice. Have the client read them and adjust before launch.
 
 Product facts in the seed content (ingredients, dosage, net weight, prices,
 delivery times) are placeholders written for the design demo. Replace them with

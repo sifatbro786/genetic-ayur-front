@@ -9,14 +9,14 @@ export default function Benefits({ data }) {
                     {data.title}
                 </h2>
                 <p className="mt-5 max-w-md whitespace-pre-line text-lg text-kali-soft">{data.text}</p>
-                <div className="relative mt-10 w-64 max-w-full">
-                    <Photo src={data.image} alt="" className="aspect-[4/5] rounded-arch" />
+                {/* A photo print on paper with a handwritten caption. The arch
+                    shape is kept for the hero only. */}
+                <figure className="mt-10 w-72 max-w-full rotate-[2.5deg] bg-[#fbfbf3] p-3 pb-4 shadow-[0_1px_0_rgb(0_0_0/0.05),0_22px_40px_-20px_rgb(23_38_26/0.55)]">
+                    <Photo src={data.image} alt="" className="aspect-[4/5] rounded-[3px]" />
                     {data.handNote ? (
-                        <span className="absolute -right-10 bottom-8 rotate-[-5deg] rounded-md bg-kagoj px-3 py-1 font-hand text-xl text-dalchini shadow-[0_6px_14px_-6px_rgb(0_0_0/0.35)]">
-                            {data.handNote}
-                        </span>
+                        <figcaption className="mt-3 text-center font-hand text-2xl text-dalchini">{data.handNote}</figcaption>
                     ) : null}
-                </div>
+                </figure>
             </div>
 
             <ul className="divide-y divide-bon/15 border-y border-bon/15">

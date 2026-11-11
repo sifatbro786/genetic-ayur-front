@@ -151,3 +151,54 @@ body {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Intro loader (components/store/IntroLoader.jsx). Hidden by default; the
+   inline script shows it on the first visit of a browser session only. A soft
+   navigation back to "/" does not run the script, so it stays hidden. */
+#ga-loader {
+    display: none;
+}
+#ga-loader[data-show] {
+    display: flex;
+}
+#ga-loader[data-done] {
+    transform: translateY(-100%);
+    transition: transform 0.75s cubic-bezier(0.7, 0, 0.2, 1);
+}
+body:has(#ga-loader[data-show]:not([data-done])) {
+    overflow: hidden;
+}
+.ga-arch {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: ga-draw 1.5s cubic-bezier(0.6, 0, 0.3, 1) 0.1s forwards;
+}
+.ga-fade {
+    opacity: 0;
+    animation: ga-fade 0.8s ease-out forwards;
+}
+.ga-bar {
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: ga-bar var(--ga-min, 3s) linear forwards;
+}
+@keyframes ga-draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+@keyframes ga-fade {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@keyframes ga-bar {
+    to {
+        transform: scaleX(1);
+    }
+}

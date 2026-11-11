@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Phone } from "lucide-react";
 import { telHref } from "@/lib/format";
 
@@ -9,9 +10,9 @@ export default function Header({ site }) {
             ) : null}
             <header className="sticky top-0 z-40 border-b border-bon/10 bg-kagoj">
                 <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-2">
-                    <a href="#top" className="shrink-0" aria-label={site.storeNameBn}>
+                    <Link href="/" className="shrink-0" aria-label={site.storeNameBn}>
                         <img src={site.logo} alt={site.storeName} className="h-12 w-auto sm:h-14" />
-                    </a>
+                    </Link>
                     <div className="flex items-center gap-2 sm:gap-5">
                         <a
                             href={telHref(site.phone)}
@@ -20,12 +21,12 @@ export default function Header({ site }) {
                             <Phone aria-hidden className="h-4 w-4" />
                             <span className="tabular-nums">{site.phone}</span>
                         </a>
-                        <a
-                            href="#order"
+                        <Link
+                            href="/#order"
                             className="rounded-full bg-bon px-5 py-2 text-[15px] font-semibold text-kagoj transition-colors hover:bg-bon-deep"
                         >
                             অর্ডার করুন
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </header>

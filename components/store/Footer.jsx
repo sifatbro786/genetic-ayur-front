@@ -13,6 +13,14 @@ export default function Footer({ site }) {
                         <img src={site.logo} alt={site.storeName} className="h-16 w-auto" />
                     </span>
                     <p className="mt-5 max-w-md">{site.footer.about}</p>
+                    <nav aria-label="নীতিমালা" className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
+                        <Link href="/privacy" className="underline-offset-4 hover:text-kagoj hover:underline">
+                            গোপনীয়তা নীতি
+                        </Link>
+                        <Link href="/terms" className="underline-offset-4 hover:text-kagoj hover:underline">
+                            শর্তাবলি
+                        </Link>
+                    </nav>
                 </div>
                 <address className="space-y-3 not-italic">
                     <p className="font-display text-xl font-semibold text-sona-light">যোগাযোগ</p>
@@ -37,14 +45,27 @@ export default function Footer({ site }) {
                 </address>
             </div>
             <div className="border-t border-kagoj/15">
-                <div className="mx-auto max-w-6xl space-y-3 px-5 py-6 text-sm text-kagoj/60">
+                <div className="mx-auto max-w-6xl space-y-4 px-5 py-6 text-sm text-kagoj/60">
                     <p className="max-w-3xl">{site.footer.disclaimer}</p>
-                    <p className="flex flex-wrap justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
                         <span>{site.footer.copyright}</span>
-                        <Link href="/admin" className="hover:text-kagoj">
-                            Admin
-                        </Link>
-                    </p>
+                        <span className="flex items-center gap-5">
+                            <span>
+                                Designed and developed by{" "}
+                                <a
+                                    href="https://strsltd.com"
+                                    target="_blank"
+                                    rel="noopener"
+                                    className="font-medium text-sona-light underline-offset-4 hover:underline"
+                                >
+                                    STR Solutions LTD
+                                </a>
+                            </span>
+                            <Link href="/admin" className="hover:text-kagoj">
+                                Admin
+                            </Link>
+                        </span>
+                    </div>
                 </div>
             </div>
         </footer>

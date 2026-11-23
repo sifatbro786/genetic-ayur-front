@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2, Upload } from "lucide-react";
+import { adminFetch } from "@/lib/admin/api";
 import { getIn, setIn } from "@/lib/path";
 import { Button, inputClass } from "./ui";
 
@@ -25,6 +26,8 @@ export default function FieldEditor({ schema, value, onChange }) {
 function Field({ field, value, onChange }) {
     const id = useId();
 
+    if (field.type === "note") return <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600">{field.text}</p>;
+
     if (field.type === "boolean") {
         return (
             <label className="flex items-center gap-2.5 text-sm text-gray-800">
@@ -41,6 +44,7 @@ function Field({ field, value, onChange }) {
 
     if (field.type === "list") return <ListField field={field} value={value || []} onChange={onChange} />;
     if (field.type === "strings") return <StringsField field={field} value={value || []} onChange={onChange} />;
+    if (field.type === "images") return <ImagesField field={field} value={value || []} onChange={onChange} />;
 
     return (
         <div>
@@ -59,21 +63,26 @@ function Field({ field, value, onChange }) {
                 <input
                     id={id}
                     type="number"
-                    min={0}
+                    step={1}
+                    min={field.min ?? 0}
                     value={value ?? 0}
-                    onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+                    // Whole numbers only: the API stores prices as whole taka.
+                    onChange={(e) => onChange(Math.max(field.min ?? 0, Math.trunc(Number(e.target.value) || 0)))}
                     className={`${inputClass} max-w-48`}
                 />
             ) : field.type === "select" ? (
-                <select id={id} value={value ?? ""} onChange={(e) => onChange(e.target.value)} className={`${inputClass} max-w-48`}>
-                    {field.options.map((opt) => (
-                        <option key={opt} value={opt}>
-                            {opt}
-                        </option>
-                    ))}
+                <select id={id} value={value ?? ""} onChange={(e) => onChange(e.target.value)} className={`${inputClass} max-w-md`}>
+                    {field.options.map((opt) => {
+                        const o = typeof opt === "string" ? { value: opt, label: opt } : opt;
+                        return (
+                            <option key={o.value} value={o.value}>
+                                {o.label}
+                            </option>
+                        );
+                    })}
                 </select>
             ) : field.type === "image" ? (
-                <ImageInput id={id} value={value ?? ""} onChange={onChange} />
+                <ImageInput id={id} value={value ?? ""} onChange={onChange} kind={field.kind} />
             ) : (
                 <input id={id} type="text" value={value ?? ""} onChange={(e) => onChange(e.target.value)} className={inputClass} />
             )}
@@ -82,47 +91,37 @@ function Field({ field, value, onChange }) {
     );
 }
 
-// Downscale in the browser before storing: the static phase keeps uploads as
-// data URLs in localStorage, which has a ~5 MB budget for everything.
-function fileToDataUrl(file, maxSide = 1400) {
-    return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-            const canvas = document.createElement("canvas");
-            canvas.width = Math.round(img.width * scale);
-            canvas.height = Math.round(img.height * scale);
-            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-            URL.revokeObjectURL(url);
-            // WebP keeps transparency, which the hero jar image needs.
-            resolve(canvas.toDataURL("image/webp", 0.82));
-        };
-        img.onerror = () => {
-            URL.revokeObjectURL(url);
-            reject(new Error("Could not read this image"));
-        };
-        img.src = url;
-    });
-}
-
-function ImageInput({ id, value, onChange }) {
+// Uploads go to the API (POST /api/admin/uploads), which re-encodes them to
+// WebP and answers with the public URL; only that URL is stored. A URL can
+// also be pasted (https:// or a /path on the site).
+function ImageInput({ id, value, onChange, kind = "content" }) {
     const [error, setError] = useState("");
-    const isData = value.startsWith("data:");
+    const [busy, setBusy] = useState(false);
 
     const onFile = async (e) => {
         const file = e.target.files?.[0];
         e.target.value = "";
         if (!file) return;
-        if (!file.type.startsWith("image/")) {
-            setError("Choose an image file (JPG, PNG or WebP).");
+        if (!/^image\/(jpeg|png|webp|avif)$/.test(file.type)) {
+            setError("Choose a JPG, PNG, WebP or AVIF image.");
             return;
         }
+        if (file.size > 8 * 1024 * 1024) {
+            setError("The image is larger than 8 MB.");
+            return;
+        }
+        const body = new FormData();
+        body.append("kind", kind);
+        body.append("image", file);
+        setBusy(true);
+        setError("");
         try {
-            onChange(await fileToDataUrl(file));
-            setError("");
+            const res = await adminFetch("/api/admin/uploads", { method: "POST", body });
+            onChange(res.url);
         } catch (err) {
             setError(err.message);
+        } finally {
+            setBusy(false);
         }
     };
 
@@ -135,18 +134,26 @@ function ImageInput({ id, value, onChange }) {
                 <input
                     id={id}
                     type="text"
-                    placeholder="Image URL, or upload a file"
-                    value={isData ? "" : value}
-                    onChange={(e) => onChange(e.target.value)}
+                    placeholder="https://... or upload a file"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value.trim())}
                     className={inputClass}
                 />
                 <div className="flex items-center gap-3">
-                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 has-focus-visible:ring-2 has-focus-visible:ring-gray-400">
+                    <label
+                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 has-focus-visible:ring-2 has-focus-visible:ring-gray-400 ${
+                            busy ? "pointer-events-none opacity-50" : ""
+                        }`}
+                    >
                         <Upload aria-hidden className="h-4 w-4" />
-                        Upload
-                        <input type="file" accept="image/*" onChange={onFile} className="sr-only" />
+                        {busy ? "Uploading..." : "Upload"}
+                        <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={onFile} disabled={busy} className="sr-only" />
                     </label>
-                    {isData ? <span className="text-xs text-gray-500">Uploaded file in use</span> : null}
+                    {value ? (
+                        <button type="button" onClick={() => onChange("")} className="text-xs text-gray-500 underline">
+                            Remove
+                        </button>
+                    ) : null}
                 </div>
                 {error ? <p className="text-xs text-red-700">{error}</p> : null}
             </div>
@@ -295,6 +302,39 @@ function StringsField({ field, value, onChange }) {
             </ul>
             <Button className="mt-2" disabled={full} onClick={() => onChange([...value, ""])}>
                 <Plus aria-hidden className="h-4 w-4" /> Add
+            </Button>
+        </div>
+    );
+}
+
+function ImagesField({ field, value, onChange }) {
+    const full = field.max && value.length >= field.max;
+    return (
+        <div>
+            <p className="mb-1.5 text-sm font-medium text-gray-700">{field.label}</p>
+            <ul className="space-y-3">
+                {value.map((src, i) => (
+                    <li key={i} className="flex items-start gap-1">
+                        <div className="min-w-0 flex-1">
+                            <ImageInput
+                                id={`${field.key}-${i}`}
+                                value={src}
+                                kind={field.kind}
+                                onChange={(next) => onChange(value.map((v, j) => (j === i ? next : v)))}
+                            />
+                        </div>
+                        <RowActions
+                            index={i}
+                            count={value.length}
+                            onMove={(from, to) => onChange(move(value, from, to))}
+                            onRemove={(index) => onChange(value.filter((_, j) => j !== index))}
+                            label={`photo ${i + 1}`}
+                        />
+                    </li>
+                ))}
+            </ul>
+            <Button className="mt-2" disabled={full} onClick={() => onChange([...value, ""])}>
+                <Plus aria-hidden className="h-4 w-4" /> Add photo
             </Button>
         </div>
     );

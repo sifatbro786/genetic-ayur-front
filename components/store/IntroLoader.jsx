@@ -23,7 +23,7 @@ setTimeout(finish,${MAX_MS});
 // Server component: rendered into the HTML so it covers the page before the
 // first paint. suppressHydrationWarning because the script adds data-show /
 // data-done before React hydrates.
-export default function IntroLoader() {
+export default function IntroLoader({ logo = defaultSite.logo }) {
     return (
         <>
             <div
@@ -57,7 +57,7 @@ export default function IntroLoader() {
                         />
                     </svg>
                     <img
-                        src={defaultSite.logo}
+                        src={logo}
                         alt=""
                         className="ga-fade absolute left-1/2 top-[38%] w-[78%] -translate-x-1/2 -translate-y-1/2"
                         style={{ animationDelay: "0.8s" }}

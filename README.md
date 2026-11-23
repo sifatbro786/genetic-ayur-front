@@ -1,9 +1,9 @@
 # Genetic Ayur storefront
 
-Single-product landing page for Genetic Ayur (Kasturi Active Power) with a demo
-dashboard. Next.js 16 (App Router), React 19, Tailwind v4. Built on the STR
-Solutions e-commerce base (Footpath); this repo is the storefront, the backend
-stays the Footpath Express API.
+Landing page store for Genetic Ayur (Kasturi Active Power, ready for 15 to 20
+products) with its dashboard at `/admin`. Next.js 16 (App Router, Cache
+Components), React 19, Tailwind v4. The backend is the Express API in
+`genetic-ayur-back` (built on the STR Solutions Footpath pattern).
 
 ```bash
 npm install
@@ -12,53 +12,44 @@ npm run build
 npm run lint
 ```
 
-## Current phase: static demo
+## Setup
 
-There is no backend yet. Everything the dashboard saves, and every order placed
-from the form, lives in the visitor's own browser (localStorage). Orders do not
-reach the shop on their own; the success screen offers a WhatsApp button that
-sends the order text to the shop's number.
+```bash
+cp .env.example .env     # NEXT_PUBLIC_API_URL, REVALIDATE_SECRET (same as the API's)
+npm install
+npm run dev              # the API must be running (genetic-ayur-back, npm run dev)
+```
 
-Dashboard demo login: `admin@geneticayur.com` / `demo1234`. It is a UI demo,
-not access control.
+`next build` prerenders the pages from the API, so the API must be reachable
+while building (locally and on Vercel).
+
+Dashboard: `/admin`, log in with the account made by the API's
+`npm run admin:create`.
 
 ## Where things are
 
 | Path | What |
 |---|---|
-| `lib/defaults.js` | Seed content: site settings, the product, landing sections |
-| `lib/stores.js` | localStorage stores and hooks. The only file that knows where data lives |
-| `lib/schema.js` | Dashboard form definitions, one per section/document |
-| `lib/pricing.js` | Stand-in for `POST /api/checkout/calculate`. Delete in the backend phase |
-| `lib/orders.js` | Order create/update, field names follow the Footpath Order model |
-| `components/store/` | Landing page sections |
-| `components/admin/` | Dashboard shell and the schema-driven form editor |
-| `app/admin/` | Dashboard pages |
+| `lib/api/storefront.js` | Server read of `/api/storefront`, cached and tagged `storefront` |
+| `lib/api/client.js` | Browser `apiFetch` + `ApiError`, `newRequestId()` |
+| `lib/admin/api.js` | Dashboard `adminFetch` (JWT), order status flow table |
+| `lib/storage.js` | The only localStorage use: guest order tokens, dashboard token |
+| `lib/payments.js` | Bangla names for payment methods and statuses |
+| `lib/schema.js` | Dashboard form definitions (landing sections, product, settings) |
+| `lib/defaults.js` | Built-in copy for the error pages and the API seed. Not read by live pages |
+| `app/api/revalidate/route.js` | `POST`, secret header, expires cache tags |
+| `app/order/[orderNumber]` | Shopper's order page (status, pay again, resend TrxID) |
+| `app/products/[slug]` | Product page (multi-product stores) |
+| `components/store/` | Landing page sections, order form, order status |
+| `components/admin/` | Dashboard shell, form editor, order detail |
+| `app/admin/` | Dashboard pages: overview, orders, products, landing page, settings |
 | `app/globals.css` | Fonts and design tokens (`@theme`) |
-| `components/store/IntroLoader.jsx` | First-visit loader on `/` (3 s minimum, once per browser session) |
-| `components/store/LegalPage.jsx` | `/privacy` and `/terms`; text is edited in Dashboard > Settings |
-| `components/store/StatusPage.jsx` | Shared shell for `app/not-found.js` and `app/error.js` |
-| `app/global-error.js` | Fallback when the root layout itself fails |
 
-### Adding an editable field
+### Adding an editable landing field
 
-1. Add it to the section in `lib/defaults.js`.
-2. Add one line to that section's schema in `lib/schema.js`.
+1. Add one line to the section's schema in `lib/schema.js`.
+2. Add the same field to `SECTION_SPECS` in the API's `services/landingSchema.js`.
 3. Read it in the section component.
-
-If the shape of a default document changes, bump `VERSION` in `lib/stores.js`
-so old browser copies are ignored.
-
-## Backend phase (after design approval)
-
-- Swap the read/write inside `lib/stores.js` for API calls. Components only use
-  the hooks, so they stay as they are.
-- Remove `lib/pricing.js`; show the numbers returned by the calculate endpoint.
-- Base changes this storefront needs from Footpath: a landing-content resource
-  (the base has none), guest orders without an email, and full cash on delivery
-  without an upfront gateway payment.
-- Replace the demo login with the base JWT auth.
-- Move images to uploads/CDN and switch `<img>` to `next/image`.
 
 ## Before going live
 

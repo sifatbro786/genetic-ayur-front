@@ -1,7 +1,12 @@
 import LegalPage from "@/components/store/LegalPage";
+import { getStorefront } from "@/lib/api/storefront";
 
-export const metadata = { title: "শর্তাবলি | জেনেটিক আয়ুর" };
+export async function generateMetadata() {
+    const { site } = await getStorefront();
+    return { title: `${site.legal?.terms?.title || "শর্তাবলি"} | ${site.storeNameBn}` };
+}
 
-export default function TermsPage() {
-    return <LegalPage kind="terms" />;
+export default async function Page() {
+    const { site } = await getStorefront();
+    return <LegalPage kind="terms" site={site} />;
 }

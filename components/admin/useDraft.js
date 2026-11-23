@@ -1,41 +1,46 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 
-// Edit-then-save for one store document. The draft is local state; nothing
-// reaches the storefront until save(). Must be used below AdminShell, which
-// only mounts children after hydration, so store.get() is the real saved copy.
-export function useDraft(store) {
-    const saved = useSyncExternalStore(store.subscribe, store.get, store.getServer);
-    const [draft, setDraft] = useState(saved);
+// Edit-then-save for one document loaded from the API. Mount the editor with
+// key={version} so a reload (or a save that returns the stored copy) starts a
+// fresh draft from the server's version.
+export function useDraft(initial, save) {
+    const [base, setBase] = useState(initial);
+    const [draft, setDraftState] = useState(initial);
+    const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState(null);
 
-    const dirty = draft !== saved && JSON.stringify(draft) !== JSON.stringify(saved);
+    const dirty = draft !== base && JSON.stringify(draft) !== JSON.stringify(base);
 
     return {
         draft,
         dirty,
+        saving,
         message,
         setDraft(next) {
-            setDraft(next);
+            setDraftState(next);
             setMessage(null);
         },
-        save() {
-            const result = store.set(draft);
-            setMessage(
-                result.ok
-                    ? { ok: true, text: "Saved. The site is updated." }
-                    : { ok: false, text: "Could not save. Browser storage is full; use smaller images or image URLs." },
-            );
+        async save() {
+            setSaving(true);
+            setMessage(null);
+            try {
+                // save() returns the stored document (cleaned by the API), which
+                // becomes the new baseline.
+                const stored = await save(draft);
+                setBase(stored);
+                setDraftState(stored);
+                setMessage({ ok: true, text: "Saved. The site updates within a few seconds." });
+            } catch (err) {
+                setMessage({ ok: false, text: err.message, details: err.errors?.map((e) => (typeof e === "string" ? e : e.message)) });
+            } finally {
+                setSaving(false);
+            }
         },
         discard() {
-            setDraft(saved);
+            setDraftState(base);
             setMessage(null);
-        },
-        resetToDefault() {
-            store.reset();
-            setDraft(store.get());
-            setMessage({ ok: true, text: "Restored the original content." });
         },
     };
 }

@@ -1,4 +1,5 @@
 import "./globals.css";
+import { getStorefront } from "@/lib/api/storefront";
 import { defaultSite } from "@/lib/defaults";
 
 // VERCEL_PROJECT_PRODUCTION_URL is set by Vercel at build time; set
@@ -9,18 +10,29 @@ const siteUrl =
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
         : "http://localhost:3000");
 
-export const metadata = {
-    metadataBase: new URL(siteUrl),
-    title: defaultSite.seo.title,
-    description: defaultSite.seo.description,
-    openGraph: {
-        title: defaultSite.seo.title,
-        description: defaultSite.seo.description,
-        images: ["/images/og.jpg"],
-        locale: "bn_BD",
-        type: "website",
-    },
-};
+// SEO title and description are edited in Dashboard > Settings. The built-in
+// copy is only used when the API cannot be reached (error pages).
+export async function generateMetadata() {
+    let seo = defaultSite.seo;
+    try {
+        const { site } = await getStorefront();
+        seo = { title: site.seo?.title || defaultSite.seo.title, description: site.seo?.description || defaultSite.seo.description };
+    } catch {
+        // fall back to the built-in copy
+    }
+    return {
+        metadataBase: new URL(siteUrl),
+        title: seo.title,
+        description: seo.description,
+        openGraph: {
+            title: seo.title,
+            description: seo.description,
+            images: ["/images/og.jpg"],
+            locale: "bn_BD",
+            type: "website",
+        },
+    };
+}
 
 export const viewport = {
     themeColor: "#06300c",

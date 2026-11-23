@@ -1,38 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ExternalLink, LayoutDashboard, LayoutTemplate, LogOut, Package, Settings, ShoppingCart } from "lucide-react";
-import { sessionStore, useHydrated, useOrders, useSession } from "@/lib/stores";
+import { adminFetch } from "@/lib/admin/api";
+import { apiFetch } from "@/lib/api/client";
+import { adminSession } from "@/lib/storage";
 import { Button, inputClass } from "./ui";
 
 const NAV = [
     { href: "/admin", label: "Overview", icon: LayoutDashboard },
     { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-    { href: "/admin/product", label: "Product", icon: Package },
+    { href: "/admin/products", label: "Products", icon: Package },
     { href: "/admin/content", label: "Landing page", icon: LayoutTemplate },
     { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
-// Demo credentials, shown on the login screen. This is a UI demo, not access
-// control: everything here runs in the visitor's own browser. Real auth (JWT
-// from the Footpath backend) replaces this component's check in phase 2.
-const DEMO_EMAIL = "admin@geneticayur.com";
-const DEMO_PASSWORD = "demo1234";
+const noop = () => () => {};
+const useHydrated = () =>
+    useSyncExternalStore(
+        noop,
+        () => true,
+        () => false,
+    );
 
+// The dashboard is client-only: the token lives in localStorage, and every
+// page loads its data from the admin API with it. The API is the access
+// control (every /api/admin route checks the JWT); this shell only decides
+// whether to show the login form.
 export default function AdminShell({ children }) {
     const hydrated = useHydrated();
-    const session = useSession();
+    const token = useSyncExternalStore(adminSession.subscribe, adminSession.get, adminSession.getServer);
     const pathname = usePathname();
-    const orders = useOrders();
+    const [user, setUser] = useState(null);
+    const [badges, setBadges] = useState({ pending: 0, verify: 0 });
 
-    // Render nothing until localStorage is readable, so edit forms never seed
-    // themselves from the server defaults by mistake.
+    // Confirms the stored token still works (expired, password changed on
+    // another device) and loads the name for the header. A 401 here logs out.
+    useEffect(() => {
+        if (!token) return undefined;
+        const ctrl = new AbortController();
+        adminFetch("/api/admin/auth/me", { signal: ctrl.signal })
+            .then((res) => setUser(res.user))
+            .catch(() => {});
+        return () => ctrl.abort();
+    }, [token]);
+
+    // Sidebar counts, refreshed on navigation and every minute.
+    useEffect(() => {
+        if (!token) return undefined;
+        const ctrl = new AbortController();
+        const load = () =>
+            adminFetch("/api/admin/orders?limit=1", { signal: ctrl.signal })
+                .then((res) => setBadges({ pending: res.statusCounts?.Pending || 0, verify: res.needsAttention?.paymentsToVerify || 0 }))
+                .catch(() => {});
+        load();
+        const timer = setInterval(load, 60_000);
+        return () => {
+            clearInterval(timer);
+            ctrl.abort();
+        };
+    }, [token, pathname]);
+
     if (!hydrated) return <div className="min-h-screen bg-gray-100" />;
-    if (!session) return <Login />;
-
-    const pending = orders.filter((o) => o.orderStatus === "Pending").length;
+    if (!token) return <Login />;
 
     return (
         <div className="min-h-screen bg-gray-100 font-sans text-gray-900 lg:grid lg:grid-cols-[15rem_1fr]">
@@ -44,6 +76,7 @@ export default function AdminShell({ children }) {
                 <nav aria-label="Dashboard" className="flex gap-1 overflow-x-auto px-3 pb-3 lg:block lg:space-y-0.5">
                     {NAV.map(({ href, label, icon: Icon }) => {
                         const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
+                        const count = href === "/admin/orders" ? badges.pending + badges.verify : 0;
                         return (
                             <Link
                                 key={href}
@@ -55,9 +88,12 @@ export default function AdminShell({ children }) {
                             >
                                 <Icon aria-hidden className="h-4 w-4" />
                                 {label}
-                                {href === "/admin/orders" && pending > 0 ? (
-                                    <span className={`ml-auto rounded-full px-1.5 text-xs ${active ? "bg-white text-gray-900" : "bg-amber-100 text-amber-800"}`}>
-                                        {pending}
+                                {count > 0 ? (
+                                    <span
+                                        title={`${badges.pending} pending, ${badges.verify} payments to verify`}
+                                        className={`ml-auto rounded-full px-1.5 text-xs ${active ? "bg-white text-gray-900" : "bg-amber-100 text-amber-800"}`}
+                                    >
+                                        {count}
                                     </span>
                                 ) : null}
                             </Link>
@@ -68,9 +104,7 @@ export default function AdminShell({ children }) {
 
             <div className="min-w-0">
                 <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-5 py-3">
-                    <p className="rounded bg-amber-50 px-2.5 py-1 text-xs text-amber-800 ring-1 ring-inset ring-amber-200">
-                        Demo mode: changes are saved in this browser only
-                    </p>
+                    <p className="text-sm text-gray-600">{user ? `Signed in as ${user.name || user.email}` : ""}</p>
                     <div className="flex items-center gap-2">
                         <a
                             href="/"
@@ -80,36 +114,45 @@ export default function AdminShell({ children }) {
                         >
                             <ExternalLink aria-hidden className="h-4 w-4" /> View site
                         </a>
-                        <Button onClick={() => sessionStore.reset()}>
+                        <Button onClick={() => adminSession.set(null)}>
                             <LogOut aria-hidden className="h-4 w-4" /> Log out
                         </Button>
                     </div>
                 </header>
-                <main className="mx-auto max-w-5xl px-5 py-7">{children}</main>
+                <main className="mx-auto max-w-6xl px-5 py-7">{children}</main>
             </div>
         </div>
     );
 }
 
 function Login() {
-    const [email, setEmail] = useState(DEMO_EMAIL);
-    const [password, setPassword] = useState(DEMO_PASSWORD);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [busy, setBusy] = useState(false);
 
-    const onSubmit = (e) => {
+    const onSubmit = async (e) => {
         e.preventDefault();
-        if (email.trim().toLowerCase() !== DEMO_EMAIL || password !== DEMO_PASSWORD) {
-            setError("Email or password does not match the demo login shown below.");
-            return;
+        setError("");
+        setBusy(true);
+        try {
+            const res = await apiFetch("/api/admin/auth/login", {
+                method: "POST",
+                body: { email: email.trim(), password },
+                networkMessage: "Cannot reach the API. Check that it is running and NEXT_PUBLIC_API_URL is right.",
+            });
+            adminSession.set(res.token);
+        } catch (err) {
+            setError(err.message);
+            setBusy(false);
         }
-        sessionStore.set({ email: DEMO_EMAIL });
     };
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 font-sans text-gray-900">
             <form onSubmit={onSubmit} className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-6">
                 <h1 className="text-lg font-semibold">Genetic Ayur dashboard</h1>
-                <p className="mt-1 text-sm text-gray-500">Log in to manage orders, product and landing page content.</p>
+                <p className="mt-1 text-sm text-gray-500">Log in to manage orders, products and landing page content.</p>
                 <label htmlFor="admin-email" className="mt-5 block text-sm font-medium text-gray-700">
                     Email
                 </label>
@@ -117,6 +160,7 @@ function Login() {
                     id="admin-email"
                     type="email"
                     autoComplete="username"
+                    required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={`${inputClass} mt-1.5`}
@@ -128,6 +172,7 @@ function Login() {
                     id="admin-password"
                     type="password"
                     autoComplete="current-password"
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={`${inputClass} mt-1.5`}
@@ -137,12 +182,9 @@ function Login() {
                         {error}
                     </p>
                 ) : null}
-                <Button type="submit" variant="primary" className="mt-5 w-full">
-                    Log in
+                <Button type="submit" variant="primary" className="mt-5 w-full" disabled={busy}>
+                    {busy ? "Logging in..." : "Log in"}
                 </Button>
-                <p className="mt-4 rounded bg-gray-50 px-3 py-2 text-xs text-gray-600">
-                    Demo login: {DEMO_EMAIL} / {DEMO_PASSWORD}
-                </p>
             </form>
         </div>
     );

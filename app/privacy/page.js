@@ -1,7 +1,12 @@
 import LegalPage from "@/components/store/LegalPage";
+import { getStorefront } from "@/lib/api/storefront";
 
-export const metadata = { title: "গোপনীয়তা নীতি | জেনেটিক আয়ুর" };
+export async function generateMetadata() {
+    const { site } = await getStorefront();
+    return { title: `${site.legal?.privacy?.title || "গোপনীয়তা নীতি"} | ${site.storeNameBn}` };
+}
 
-export default function PrivacyPage() {
-    return <LegalPage kind="privacy" />;
+export default async function Page() {
+    const { site } = await getStorefront();
+    return <LegalPage kind="privacy" site={site} />;
 }

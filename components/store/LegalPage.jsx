@@ -1,10 +1,6 @@
-"use client";
-
 import Link from "next/link";
 import { Phone } from "lucide-react";
-import { defaultSite } from "@/lib/defaults";
 import { telHref } from "@/lib/format";
-import { useSite } from "@/lib/stores";
 import Footer from "./Footer";
 import Header from "./Header";
 
@@ -46,9 +42,9 @@ function parse(body = "") {
         });
 }
 
-export default function LegalPage({ kind }) {
-    const site = useSite();
-    const page = site.legal?.[kind] || defaultSite.legal[kind];
+// Server component: `site` comes from the cached /api/storefront data.
+export default function LegalPage({ kind, site }) {
+    const page = site.legal?.[kind] || { title: "", updated: "", body: "" };
     const blocks = parse(page.body);
     const other = kind === "privacy" ? { href: "/terms", label: "শর্তাবলি" } : { href: "/privacy", label: "গোপনীয়তা নীতি" };
 

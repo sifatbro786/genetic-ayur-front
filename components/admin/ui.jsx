@@ -58,3 +58,57 @@ export function StatusBadge({ status }) {
         </span>
     );
 }
+
+const PAYMENT_STYLES = {
+    Pending: "bg-gray-50 text-gray-700 ring-gray-200",
+    Verifying: "bg-amber-50 text-amber-800 ring-amber-200",
+    "Advance Paid": "bg-teal-50 text-teal-800 ring-teal-200",
+    Paid: "bg-green-50 text-green-800 ring-green-200",
+    Failed: "bg-red-50 text-red-700 ring-red-200",
+    Refunded: "bg-gray-100 text-gray-600 ring-gray-200",
+};
+
+export function PaymentBadge({ status }) {
+    return (
+        <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${PAYMENT_STYLES[status] || PAYMENT_STYLES.Pending}`}>
+            {status}
+        </span>
+    );
+}
+
+export function Pagination({ page, totalPages, total, onPage }) {
+    if (!totalPages || totalPages <= 1) return total ? <p className="px-4 py-3 text-xs text-gray-500">{total} in total</p> : null;
+    return (
+        <div className="flex items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 text-sm">
+            <span className="text-xs text-gray-500">
+                Page {page} of {totalPages} ({total} in total)
+            </span>
+            <div className="flex gap-2">
+                <Button disabled={page <= 1} onClick={() => onPage(page - 1)}>
+                    Previous
+                </Button>
+                <Button disabled={page >= totalPages} onClick={() => onPage(page + 1)}>
+                    Next
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+export function ErrorNote({ error, onRetry }) {
+    if (!error) return null;
+    return (
+        <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <span>{error.message}</span>
+            {onRetry ? <Button onClick={onRetry}>Try again</Button> : null}
+        </div>
+    );
+}
+
+// Dashboard pages render only in the browser (AdminShell waits for
+// hydration), so the browser's time zone is safe here. Bangladesh time is
+// forced anyway so every staff device shows the same clock.
+export const formatDate = (iso) =>
+    iso
+        ? new Date(iso).toLocaleString("en-GB", { timeZone: "Asia/Dhaka", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+        : "";

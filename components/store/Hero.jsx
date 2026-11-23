@@ -10,7 +10,9 @@ const STICKERS = [
 ];
 
 export default function Hero({ data, product, site }) {
-    const lowest = product.variants.reduce((min, v) => (v.price < min.price ? v : min), product.variants[0]);
+    // product is null only when every product is hidden in the dashboard.
+    const variants = product?.variants || [];
+    const lowest = variants.reduce((min, v) => (v.price < min.price ? v : min), variants[0]);
 
     return (
         <section id="top" className="paper-grain overflow-hidden">
@@ -81,12 +83,14 @@ export default function Hero({ data, product, site }) {
                             aria-hidden
                             className="absolute bottom-[4%] left-1/2 h-[7%] w-[64%] -translate-x-1/2 rounded-[50%] bg-black/55 blur-md"
                         />
-                        <img
-                            src={product.image}
-                            alt={`${product.name} কৌটা`}
-                            fetchPriority="high"
-                            className="absolute bottom-[5%] left-1/2 w-[60%] -translate-x-1/2 animate-rise drop-shadow-[0_18px_22px_rgb(0_0_0/0.45)]"
-                        />
+                        {product?.image ? (
+                            <img
+                                src={product.image}
+                                alt={`${product.name} কৌটা`}
+                                fetchPriority="high"
+                                className="absolute bottom-[5%] left-1/2 w-[60%] -translate-x-1/2 animate-rise drop-shadow-[0_18px_22px_rgb(0_0_0/0.45)]"
+                            />
+                        ) : null}
                     </div>
                     {data.notes?.slice(0, STICKERS.length).map((note, i) =>
                         note ? (

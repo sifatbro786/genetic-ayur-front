@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSite } from "@/lib/stores";
+import { defaultSite } from "@/lib/defaults";
 import Footer from "./Footer";
 import Header from "./Header";
 
@@ -33,9 +33,11 @@ function Action({ action, primary }) {
 }
 
 // Shared shell for the 404 and error pages: the storefront header and footer
-// around a dark green panel. `art` is the large centrepiece.
-export default function StatusPage({ art, kicker, title, text, actions, note }) {
-    const site = useSite();
+// around a dark green panel. `art` is the large centrepiece. `site` is the
+// API copy when the caller has it (404); the error page cannot rely on the API
+// (it may be the reason for the error), so it falls back to the built-in
+// contact details in lib/defaults.js.
+export default function StatusPage({ art, kicker, title, text, actions, note, site = defaultSite }) {
     return (
         <>
             <Header site={site} />

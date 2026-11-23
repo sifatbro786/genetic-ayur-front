@@ -1,11 +1,23 @@
 import StatusPage from "@/components/store/StatusPage";
-import { defaultProduct } from "@/lib/defaults";
+import { getStorefront, landingProduct } from "@/lib/api/storefront";
+import { defaultProduct, defaultSite } from "@/lib/defaults";
 
 export const metadata = { title: "পাতাটি পাওয়া যায়নি | জেনেটিক আয়ুর" };
 
-export default function NotFound() {
+export default async function NotFound() {
+    // The 404 must render even when the API is down.
+    let site = defaultSite;
+    let image = defaultProduct.image;
+    try {
+        const data = await getStorefront();
+        site = data.site;
+        image = landingProduct(data.landing, data.products)?.image || image;
+    } catch {
+        // keep the built-in fallbacks
+    }
     return (
         <StatusPage
+            site={site}
             art={
                 // ৪০৪ with the Kasturi jar, tipped over, standing in for the ০.
                 <p
@@ -14,7 +26,7 @@ export default function NotFound() {
                 >
                     <span aria-hidden>৪</span>
                     <img
-                        src={defaultProduct.image}
+                        src={image}
                         alt=""
                         className="mx-1 h-[0.92em] w-auto rotate-[14deg] drop-shadow-[0_14px_18px_rgb(0_0_0/0.5)] sm:mx-3"
                     />

@@ -21,7 +21,8 @@ npm run dev              # the API must be running (genetic-ayur-back, npm run d
 ```
 
 `next build` prerenders the pages from the API, so the API must be reachable
-while building (locally and on Vercel).
+while building (locally and on the VPS). Production setup and release steps:
+`../genetic-ayur-back/HANDOVER.md`, section "Production (live)".
 
 Dashboard: `/admin`, log in with the account made by the API's
 `npm run admin:create`.
